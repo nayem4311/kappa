@@ -41,7 +41,7 @@ app.get('/image', async (req, res) => {
     }
 });
 
-// New endpoint to fetch icon URL based on itemID
+// Updated endpoint to fetch and display the image directly based on itemID
 app.get('/item-icon', async (req, res) => {
     const itemID = req.query.itemID;
     if (!itemID) {
@@ -49,13 +49,18 @@ app.get('/item-icon', async (req, res) => {
     }
 
     const externalApiUrl = `https://info-jade.vercel.app/data?id=${itemID}&key=${API_KEY}`;
-    
+
     try {
         const response = await axios.get(externalApiUrl);
         const data = response.data;
 
         if (data && data.iconUrl) {
-            res.json({ iconUrl: data.iconUrl });
+            // Fetch the image from the iconUrl
+            const imageResponse = await axios.get(data.iconUrl, {
+                responseType: 'arraybuffer'
+            });
+            res.set('Content-Type', 'image/png');
+            res.send(imageResponse.data);
         } else {
             res.status(404).send('Icon URL not found');
         }
