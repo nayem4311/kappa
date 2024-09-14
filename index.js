@@ -34,6 +34,7 @@ app.get('/image', async (req, res) => {
 
     fs.readFile(filePath, 'utf8', async (err, data) => {
         if (err) {
+            console.error('Error reading data file:', err);
             res.status(500).json({ message: "Error reading data file. Made With Love by Mostafa Nayem" });
         } else {
             const items = JSON.parse(data);
@@ -48,6 +49,7 @@ app.get('/image', async (req, res) => {
                     res.setHeader('Content-Type', response.headers['content-type']);
                     response.data.pipe(res);
                 } catch (fetchError) {
+                    console.error('Error fetching the image:', fetchError);
                     res.status(500).json({ message: "Error fetching the image. Made With Love by Mostafa Nayem" });
                 }
             } else {
