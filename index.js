@@ -26,8 +26,8 @@ app.use((req, res, next) => {
     }
 });
 
-// API endpoint to search by itemID
-app.get('/data', (req, res) => {
+// API endpoint to get the image for an itemID
+app.get('/image', (req, res) => {
     const itemID = req.query.id;
     const filePath = path.join(__dirname, 'data', 'data.json');
 
@@ -40,14 +40,9 @@ app.get('/data', (req, res) => {
             if (item) {
                 // Construct the URL for the image
                 const iconUrl = `https://ffcdn-kappa.vercel.app/image?key=NayemLeakStudioBD&iconName=${item.iconName}.png`;
-
-                // Add the URL to the item response
-                const responseItem = {
-                    ...item,
-                    iconUrl
-                };
-
-                res.json(responseItem);
+                
+                // Redirect to the image URL
+                res.redirect(iconUrl);
             } else {
                 res.status(404).json({ message: "Item not found" });
             }
