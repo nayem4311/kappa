@@ -1,65 +1,68 @@
 const express = require('express');
-const cors = require('cors');
-const fs = require('fs');
-const path = require('path');
 const axios = require('axios');
+const cors = require('cors'); // Import the cors package
 const app = express();
-const port = 3000;
 
-// Enable CORS
-app.use(cors());
+const API_KEY = 'NayemLeakStudioBD';
+
+// Enable CORS for all routes
+app.use(cors()); // Add this line to enable CORS for all routes
 
 // Middleware to check API key
 app.use((req, res, next) => {
-    const apiKey = req.query.key; // Get the API key from the query parameter
-    const validApiKey = 'NayemLeakStudioBD'; // Define the valid API key
+    const key = req.query.key;
+    if (key !== API_KEY) {
+        return res.status(403).send(`
+            <h1>403 Forbidden</h1>
+            <p>Invalid API key. Please contact our support team at <a href="https://facebook.com/leakstudio">Leak Studio Bangladesh</a> for assistance.</p>
+            <p>Ensure that you have the correct credentials to access this resource.</p>
+        `);
+    }
+    next();
+});
 
-    if (apiKey === validApiKey) {
-        next(); // API key is correct, proceed to the next middleware or route handler
-    } else {
-        const message = `
-            Forbidden: Invalid API key.
-            Please contact us at <a href="https://facebook.com/leakstudio" target="_blank">facebook.com/leakstudio</a> for access.
-            Note: This API is for personal use only.
-            Made With Love by Mostafa Nayem
-        `;
-        res.status(403).send(message); // Return the error message with HTML formatting
+// Endpoint to fetch images
+app.get('/image', async (req, res) => {
+    const iconName = req.query.iconName;
+    if (!iconName) {
+        return res.status(400).send('iconName query parameter is required');
+    }
+
+    const imageUrl = `https://freefiremobile-a.akamaihd.net/common/Local/PK/FF_UI_Icon/${iconName}`;
+
+    try {
+        const response = await axios.get(imageUrl, {
+            responseType: 'arraybuffer'
+        });
+        res.set('Content-Type', 'image/png');
+        res.send(response.data);
+    } catch (error) {
+        res.status(404).send('Image not found');
     }
 });
 
-// API endpoint to get the image for an itemID
-app.get('/image', async (req, res) => {
-    const itemID = req.query.id;
-    const filePath = path.join(__dirname, 'data', 'data.json');
+// New endpoint to fetch icon URL based on itemID
+app.get('/item-icon', async (req, res) => {
+    const itemID = req.query.itemID;
+    if (!itemID) {
+        return res.status(400).send('itemID query parameter is required');
+    }
 
-    fs.readFile(filePath, 'utf8', async (err, data) => {
-        if (err) {
-            console.error('Error reading data file:', err);
-            res.status(500).json({ message: "Error reading data file. Made With Love by Mostafa Nayem" });
+    const externalApiUrl = `https://info-jade.vercel.app/data?id=${itemID}&key=${API_KEY}`;
+    
+    try {
+        const response = await axios.get(externalApiUrl);
+        const data = response.data;
+
+        if (data && data.iconUrl) {
+            res.json({ iconUrl: data.iconUrl });
         } else {
-            const items = JSON.parse(data);
-            const item = items.find(i => i.itemID === itemID);
-            if (item) {
-                // Construct the URL for the image
-                const iconUrl = `https://ffcdn-kappa.vercel.app/image?key=NayemLeakStudioBD&iconName=${item.iconName}.png`;
-
-                try {
-                    // Fetch the image and stream it to the response
-                    const response = await axios.get(iconUrl, { responseType: 'stream' });
-                    res.setHeader('Content-Type', response.headers['content-type']);
-                    response.data.pipe(res);
-                } catch (fetchError) {
-                    console.error('Error fetching the image:', fetchError);
-                    res.status(500).json({ message: "Error fetching the image. Made With Love by Mostafa Nayem" });
-                }
-            } else {
-                res.status(404).json({ message: "Item not found" });
-            }
+            res.status(404).send('Icon URL not found');
         }
-    });
+    } catch (error) {
+        res.status(500).send('Error fetching data from external API');
+    }
 });
 
-// Start the server
-app.listen(port, () => {
-    console.log(`Server is running on http://localhost:${port}`);
-});
+// Export the app for Vercel
+module.exports = app;
