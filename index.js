@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
+const axios = require('axios');
 const app = express();
 const port = 3000;
 
@@ -27,11 +28,11 @@ app.use((req, res, next) => {
 });
 
 // API endpoint to get the image for an itemID
-app.get('/image', (req, res) => {
+app.get('/image', async (req, res) => {
     const itemID = req.query.id;
     const filePath = path.join(__dirname, 'data', 'data.json');
 
-    fs.readFile(filePath, 'utf8', (err, data) => {
+    fs.readFile(filePath, 'utf8', async (err, data) => {
         if (err) {
             res.status(500).json({ message: "Error reading data file. Made With Love by Mostafa Nayem" });
         } else {
@@ -40,9 +41,15 @@ app.get('/image', (req, res) => {
             if (item) {
                 // Construct the URL for the image
                 const iconUrl = `https://ffcdn-kappa.vercel.app/image?key=NayemLeakStudioBD&iconName=${item.iconName}.png`;
-                
-                // Redirect to the image URL
-                res.redirect(iconUrl);
+
+                try {
+                    // Fetch the image and stream it to the response
+                    const response = await axios.get(iconUrl, { responseType: 'stream' });
+                    res.setHeader('Content-Type', response.headers['content-type']);
+                    response.data.pipe(res);
+                } catch (fetchError) {
+                    res.status(500).json({ message: "Error fetching the image. Made With Love by Mostafa Nayem" });
+                }
             } else {
                 res.status(404).json({ message: "Item not found" });
             }
