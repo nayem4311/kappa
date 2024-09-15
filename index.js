@@ -1,7 +1,7 @@
 const express = require('express');
 const axios = require('axios');
 const cors = require('cors');
-const { createCanvas, loadImage } = require('canvas'); // Import canvas package
+const sharp = require('sharp'); // Import sharp package
 const app = express();
 
 const API_KEY = 'NayemLeakStudioBD';
@@ -38,46 +38,4 @@ app.get('/item-icon', async (req, res) => {
         if (data && data.iconUrl) {
             // Fetch the image from the iconUrl
             const imageResponse = await axios.get(data.iconUrl, {
-                responseType: 'arraybuffer'
-            });
-
-            // Load the image into canvas
-            const image = await loadImage(imageResponse.data);
-
-            // Create a canvas with the same size as the image
-            const canvas = createCanvas(image.width, image.height);
-            const ctx = canvas.getContext('2d');
-
-            // Draw the image onto the canvas
-            ctx.drawImage(image, 0, 0);
-
-            // Add overlay text
-            ctx.font = 'bold 30px Arial'; // Set the font style
-            ctx.fillStyle = 'white'; // Set the text color
-            ctx.strokeStyle = 'black'; // Add an outline to make the text stand out
-            ctx.lineWidth = 2;
-            const text = '@nayem';
-            const textWidth = ctx.measureText(text).width;
-
-            // Position the text at the bottom-right corner
-            ctx.fillText(text, image.width - textWidth - 20, image.height - 20);
-            ctx.strokeText(text, image.width - textWidth - 20, image.height - 20);
-
-            // Send the image as PNG
-            res.set('Content-Type', 'image/png');
-            canvas.toBuffer((err, buffer) => {
-                if (err) {
-                    return res.status(500).send('Error generating image');
-                }
-                res.send(buffer);
-            });
-        } else {
-            res.status(404).send('Icon URL not found');
-        }
-    } catch (error) {
-        res.status(500).send('Error fetching data from external API');
-    }
-});
-
-// Export the app for Vercel
-module.exports = app;
+                responseType: 'arraybuffer
