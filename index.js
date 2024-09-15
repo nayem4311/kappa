@@ -1,12 +1,13 @@
 const express = require('express');
 const axios = require('axios');
-const cors = require('cors'); // Import the cors package
+const cors = require('cors');
+const { createCanvas, loadImage } = require('canvas'); // Import canvas package
 const app = express();
 
 const API_KEY = 'NayemLeakStudioBD';
 
 // Enable CORS for all routes
-app.use(cors()); // Add this line to enable CORS for all routes
+app.use(cors());
 
 // Middleware to check API key
 app.use((req, res, next) => {
@@ -21,27 +22,7 @@ app.use((req, res, next) => {
     next();
 });
 
-// Endpoint to fetch images
-app.get('/image', async (req, res) => {
-    const iconName = req.query.iconName;
-    if (!iconName) {
-        return res.status(400).send('iconName query parameter is required');
-    }
-
-    const imageUrl = `https://freefiremobile-a.akamaihd.net/common/Local/PK/FF_UI_Icon/${iconName}`;
-
-    try {
-        const response = await axios.get(imageUrl, {
-            responseType: 'arraybuffer'
-        });
-        res.set('Content-Type', 'image/png');
-        res.send(response.data);
-    } catch (error) {
-        res.status(404).send('Image not found');
-    }
-});
-
-// Updated endpoint to fetch and display the image directly based on itemID
+// Updated endpoint to fetch and display the image directly based on itemID with overlay text
 app.get('/item-icon', async (req, res) => {
     const itemID = req.query.itemID;
     if (!itemID) {
@@ -59,8 +40,37 @@ app.get('/item-icon', async (req, res) => {
             const imageResponse = await axios.get(data.iconUrl, {
                 responseType: 'arraybuffer'
             });
+
+            // Load the image into canvas
+            const image = await loadImage(imageResponse.data);
+
+            // Create a canvas with the same size as the image
+            const canvas = createCanvas(image.width, image.height);
+            const ctx = canvas.getContext('2d');
+
+            // Draw the image onto the canvas
+            ctx.drawImage(image, 0, 0);
+
+            // Add overlay text
+            ctx.font = 'bold 30px Arial'; // Set the font style
+            ctx.fillStyle = 'white'; // Set the text color
+            ctx.strokeStyle = 'black'; // Add an outline to make the text stand out
+            ctx.lineWidth = 2;
+            const text = '@nayem';
+            const textWidth = ctx.measureText(text).width;
+
+            // Position the text at the bottom-right corner
+            ctx.fillText(text, image.width - textWidth - 20, image.height - 20);
+            ctx.strokeText(text, image.width - textWidth - 20, image.height - 20);
+
+            // Send the image as PNG
             res.set('Content-Type', 'image/png');
-            res.send(imageResponse.data);
+            canvas.toBuffer((err, buffer) => {
+                if (err) {
+                    return res.status(500).send('Error generating image');
+                }
+                res.send(buffer);
+            });
         } else {
             res.status(404).send('Icon URL not found');
         }
