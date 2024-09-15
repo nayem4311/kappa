@@ -38,4 +38,33 @@ app.get('/item-icon', async (req, res) => {
         if (data && data.iconUrl) {
             // Fetch the image from the iconUrl
             const imageResponse = await axios.get(data.iconUrl, {
-                responseType: 'arraybuffer
+                responseType: 'arraybuffer'
+            });
+
+            // Use sharp to overlay text on the image
+            const imageBuffer = Buffer.from(imageResponse.data);
+            const modifiedImage = await sharp(imageBuffer)
+                .composite([{
+                    input: Buffer.from(`
+                        <svg>
+                            <text x="10" y="50" font-size="30" fill="white" stroke="black" stroke-width="1">@nayem</text>
+                        </svg>
+                    `),
+                    gravity: 'southeast'
+                }])
+                .png()
+                .toBuffer();
+
+            // Send the modified image
+            res.set('Content-Type', 'image/png');
+            res.send(modifiedImage);
+        } else {
+            res.status(404).send('Icon URL not found');
+        }
+    } catch (error) {
+        res.status(500).send('Error fetching data from external API');
+    }
+});
+
+// Export the app for Vercel
+module.exports = app;
