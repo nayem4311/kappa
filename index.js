@@ -12,11 +12,11 @@ app.use(cors()); // Add this line to enable CORS for all routes
 app.use((req, res, next) => {
     const key = req.query.key;
     if (key !== API_KEY) {
-        return res.status(403).send(
+        return res.status(403).send(`
             <h1>403 Forbidden</h1>
             <p>Invalid API key. Please contact our support team at <a href="https://facebook.com/leakstudio">Leak Studio Bangladesh</a> for assistance.</p>
             <p>Ensure that you have the correct credentials to access this resource.</p>
-        );
+        `);
     }
     next();
 });
@@ -28,7 +28,7 @@ app.get('/image', async (req, res) => {
         return res.status(400).send('iconName query parameter is required');
     }
 
-    const imageUrl = https://freefiremobile-a.akamaihd.net/common/Local/PK/FF_UI_Icon/${iconName};
+    const imageUrl = `https://freefiremobile-a.akamaihd.net/common/Local/PK/FF_UI_Icon/${iconName}`;
 
     try {
         const response = await axios.get(imageUrl, {
@@ -48,7 +48,7 @@ app.get('/item-icon', async (req, res) => {
         return res.status(400).send('itemID query parameter is required');
     }
 
-    const externalApiUrl = https://info-jade.vercel.app/data?id=${itemID}&key=${API_KEY};
+    const externalApiUrl = `https://info-jade.vercel.app/data?id=${itemID}&key=${API_KEY}`;
 
     try {
         const response = await axios.get(externalApiUrl);
